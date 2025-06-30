@@ -65,8 +65,16 @@ class MyThread extends Thread {
 }
 ```
 
+Java创建线程执行的流程如下：
+Java中调用start() ─────► JVM调用start0() ─────► 调用OS创建线程（如pthread_create）
+                                            │
+                                            |
+                                            ▼
+                                   系统线程启动后回调 Thread.run()
 
-### 2.1 创建线程的方式二： 实现Runnable接口
+
+
+### 2.2 创建线程的方式二： 实现Runnable接口
 
     1.定义一个实现Runnable接口的类
     2.实现类实现Runnable接口中的run方法，写上要执行的任务，并将任务代码写在run方法中
@@ -125,12 +133,54 @@ class EvenRunnable implements Runnable {
 ```
 
 
+### 2.3 实现 Callable 接口 + FutureTask（支持返回值和异常）(和C++的future、promise类似)
 
+```java
+class MyCallable implements Callable<Integer> {
+    @Override
+    public Integer call() throws Exception {
+        // 线程执行任务
+        return 123;
+    }
+}
 
+public class Demo {
+    public static void main(String[] args) throws Exception {
+        FutureTask<Integer> task = new FutureTask<>(new MyCallable());
+        Thread t = new Thread(task);
+        t.start();
 
+        // 阻塞等待结果
+        Integer result = task.get();
+        System.out.println("线程返回值: " + result);
+    }
+}
+```
+
+### 2.4 使用线程池（ExecutorService）
+
+```Java
+public class Demo {
+    public static void main(String[] args) {
+        ExecutorService pool = Executors.newFixedThreadPool(3);
+
+        pool.execute(() -> System.out.println("线程池执行任务"));
+
+        pool.shutdown();
+    }
+}
+```
+
+### 2.5 Java 19+ 虚拟线程（Preview）
+
+- 虚拟线程允许程序员创建线程，这些线程与Java线程一样，可以执行任务，但是它们不占用JVM的线程资源。
+
+```Java
+Thread.startVirtualThread(() -> System.out.println("虚拟线程执行"));
+```
 
 - 不同方式创建线程的对比
-  
+
 | 方式                       | 是否继承 Thread | 是否有返回值  | 适用场景           |
 | ------------------------ | ----------- | ------- | -------------- |
 | 继承 Thread                | 是           | 否       | 简单线程任务         |
